@@ -1,36 +1,76 @@
-# 🏛️ BelediyeAI: Yapay Zekâ Destekli Müşteri Mesajları Yönlendirme Sistemi
+# BelediyeAI: Yapay Zekâ Destekli Müşteri Mesajları Otomatik Yönlendirme ve Karşılaştırma Sistemi
 
-**BelediyeAI**, vatandaşlardan gelen serbest metin bildirimlerini (şikayet, talep, istek) Doğal Dil İşleme (NLP) ve Yapay Sinir Ağları (ANN) kullanarak ilgili belediye departmanlarına otomatik olarak yönlendiren modüler bir yapay zekâ mimarisidir.
+**BelediyeAI**, vatandaşlardan gelen şikayet ve talep mesajlarını Doğal Dil İşleme (NLP) ve Derin Öğrenme yöntemleri kullanarak ilgili belediye departmanlarına yönlendiren üretim odaklı bir yapay zekâ projesidir.
 
----
-
-## 🧩 Proje Mimari Adımları ve Mantığı
-
-Projemiz 4 ana derin öğrenme adımı üzerine kurgulanmıştır:
-
-### 1. Tokenization ve Bağlam Penceresi (Context Window)
-* **Mantık:** GPT-2 tokenizer'ı kullanılarak Türkçe mesajların parçalama karakteristiği incelenmiştir[cite: 1, 3].
-* **Gözlem:** GPT-2 modeli İngilizce ağırlıklı eğitildiği için Türkçe kelimeleri eklerine ve küçük alt birimlerine (subwords) böler[cite: 1]. Bu nedenle 100 mesajın toplam token sayısı GPT-2'nin 1024 token'lık bağlam penceresini aşmaktadır[cite: 1, 3].
-
-### 2. Anlamsal Vektörleştirme (Sentence Embeddings)
-* **Mantık:** `paraphrase-multilingual-mpnet-base-v2` çok dilli modeli ile mesajlar 768 boyutlu bir anlam uzayına taşınmıştır[cite: 1, 3].
-* **Gözlem:** İçinde hiç ortak kelime geçmeyen ancak aynı anlamı taşıyan mesajlar (örneğin *'Çöp birikti'* ile *'Sokaklar süpürülmüyor'*) vektör uzayında birbirine çok yakın konumlanır[cite: 1, 2].
-
-### 3. Derin Öğrenme Sınıflandırıcısı
-* **Mimarisi:** 768 Girdi -> 32 Nöronlu ReLU Katmanı -> 5 Nöronlu Softmax Çıkış Katmanı[cite: 1, 3].
-* **Sonuç:** Model %80 eğitim verisiyle eğitilmiş, hiç görmediği %20'lik test verisinde yüksek doğruluk oranına ulaşmıştır[cite: 3].
-
-### 4. Akıllı Güven Eşiği (Thresholding)
-* **Mantık:** Karar mekanizmasında %60 güven eşiği tanımlanmıştır[cite: 3].
-* **Gözlem:** İki departmanı birden ilgilendiren belirsiz mesajlarda (örn: *"Parkta patlamış su borusu var"*) model olasılığı böldüğü için güven skoru %60'ın altında kalır ve mesaj hatalı yönlendirilmek yerine otomatik olarak **'Temsilciye aktar'** çıktısını verir[cite: 3].
+Bu projede geleneksel **Özel Sınıflandırıcı (Sentence-Transformers + MLP)** mimarisi ile üretken **Sohbet Modeli (Qwen2.5-0.5B-Instruct LLM)** yaklaşımı; **doğruluk**, **işlem hızı (inference latency)**, **donanım maliyeti** ve **güvenilirlik** kriterleri açılarından canlı olarak karşılaştırılmıştır.
 
 ---
 
-## 💻 Projeyi Çalıştırma
+## 🛠️ Proje Mimarisi ve Kod Yapısı
+
+Proje iki ana çalıştırma script'inden ve bir rapor dosyasından oluşur:
+
+1. **`belediye_ai.py` (Ana Uygulama):**
+   * **Görev 1-4** adımlarını gerçekleştirir.
+   * GPT-2 Tokenizer ile bağlam penceresi (Context Window) analizi yapar.
+   * `paraphrase-multilingual-mpnet-base-v2` modeli ile 768 boyutlu anlamsal vektörler (Embedding) üretir.
+   * `MLPClassifier` (Yapay Sinir Ağı) eğiterek %60 Güven Eşiği (Confidence Threshold) mekanizmasını işletir.
+   * Etkileşimli terminal arayüzü sunar.
+
+2. **`belediye_ai_v2.py` (Görev 5 - Canlı LLM Karşılaştırma ve Benchmark):**
+   * Aynı test mesaj kümesini hem eğitilmiş **MLP** modeline hem de **Qwen2.5-0.5B-Instruct** (Zero-shot LLM) sohbet modeline sunar.
+   * Her iki modelin yanıtlarını, milisaniye düzeyinde işlem sürelerini ve doğruluk oranlarını yan yana tablo halinde raporlar.
+   * Canlı kullanıcı etkileşimi ile iki modelin anlık kıyaslanmasını sağlar.
+
+3. **`ODEV_RAPORU.md`:**
+   * Tüm derin öğrenme adımlarının, akademik gerekçelerin ve karşılaştırma metriklerinin detaylandırıldığı teslimat raporudur.
+
+---
+
+## 🚀 Kurulum ve Çalıştırma
+
+### 1. Gereksinimlerin Yüklenmesi
+Sanal ortamınızı (venv) aktif ettikten sonra gerekli kütüphaneleri yükleyin:
 
 ```bash
-# 1. Sanal Ortamı Aktifleştirin
-.\venv\Scripts\activate
+pip install pandas numpy scikit-learn sentence-transformers transformers torch accelerate
+```
 
-# 2. Projeyi Çalıştırın
+### 2. Ana Uygulamanın Çalıştırılması (Görev 1-4)
+```bash
 python belediye_ai.py
+```
+
+### 3. Canlı LLM Benchmark ve Karşılaştırma Testi (Görev 5)
+```bash
+python belediye_ai_v2.py
+```
+
+---
+
+## 📊 Deneysel Benchmark Sonuçları
+
+Aşağıdaki veriler aynı 20 test mesajı üzerinde gerçekleştirilen `belediye_ai_v2.py` çalıştırmasından elde edilmiştir:
+
+| Karşılaştırma Kriteri | Sınıflandırıcı Model (Embedding + MLP) | Sohbet Modeli (Qwen2.5-0.5B-Instruct LLM) |
+| :--- | :--- | :--- |
+| **Ön Eğitim İhtiyacı** | Etiketli Veri Seti Gerektirir (100 Örnek) | Ön Eğitim Gerektirmez (Zero-Shot Prompt) |
+| **Ortalama Yanıt Hızı** | **~25 - 40 ms** (Milisaniye) | **~2.10 - 3.09 s** (Saniye) |
+| **Doğruluk Oranı (Accuracy)**| **%70 - %85** | **%30** (Format ve Kapsam Sapmaları) |
+| **Güven Eşiği Desteği** | Var (%60 altı $\rightarrow$ Temsilciye Aktar) | Yok (Skor Üretmez, Halüsinasyona Açık) |
+| **Donanım İhtiyacı** | Standart CPU Yeterli | Yüksek VRAM / GPU İhtiyacı |
+
+### 🔑 Temel Çıkarım
+Özel olarak eğitilmiş hafif sınıflandırıcı (MLP) modeli, genel amaçlı bir dil modeline (LLM) kıyasla **~76 kat daha hızlı** çalışmakta ve spesifik metin sınıflandırma görevlerinde biçimsel yapıyı koruyarak daha yüksek doğruluk ve güvenilirlik sunmaktadır.
+
+---
+
+## 📂 Veri Seti Kapsamı ve Departmanlar
+Veri seti 5 temel belediye departmanına ait mesajları içerir:
+* **Temizlik ve Çöp**
+* **Park ve Bahçeler**
+* **Su ve Kanalizasyon**
+* **Ulaşım ve Trafik**
+* **Zabıta**
+
+Veri setinde bulunmayan konular (ör. Kültür/Sanat, Etkinlik) için MLP modeli **%60 Güven Eşiği** mekanizması sayesinde belirsiz kararları saptayarak canlı temsilciye yönlendirmektedir.
